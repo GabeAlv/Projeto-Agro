@@ -156,7 +156,6 @@ class MapCard(BaseCard):
 
         # Imagem de fundo do mapa de satélite
         map_background = ft.Image(
-            src="assets/satellite_field.png",
             src="assets/drone_crop_field.jpg",
             fit=ft.BoxFit.COVER,
             border_radius=ft.BorderRadius.all(12),

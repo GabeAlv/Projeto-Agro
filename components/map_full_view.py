@@ -78,7 +78,6 @@ class MapFullView(BaseCard):
 
         # Imagem de fundo
         map_bg = ft.Image(
-            src="assets/drone_crop_field.jpg",
             src="assets/crop_field.jpg",
             fit=ft.BoxFit.COVER,
             border_radius=ft.BorderRadius.all(12),
