@@ -9,7 +9,6 @@ from components.header import create_header
 from pages.dashboard_page import DashboardPage
 from pages.map_page import MapPage
 
-
 def main(page: ft.Page):
     # Configurações globais da página
     page.title = "IMK - Monitoramento Agrícola & Sensoriamento Espacial"
