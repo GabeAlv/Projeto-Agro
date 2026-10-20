@@ -89,6 +89,14 @@ python main.py
 flet run main.py --web
 ```
 
+### Novas seções
+
+- **Sensores IoT:** seleção de um dispositivo por talhão, com temperatura do ar, umidade do solo, umidade do ar, histórico ilustrativo e estado offline.
+- **Relatórios:** escolha de todos os dispositivos ou de um talhão, geração de prévia e download de PDF A4 com as leituras e notificações relacionadas. O PDF é gerado com a biblioteca padrão do Python.
+- **Notificações:** alertas e indicações com filtros por tipo e dispositivo.
+
+As três seções usam dados de demonstração centralizados em `telemetry.py`, pois a tabela `sensor_readings` do SQLite ainda não contém leituras. A data do relatório identifica a geração do arquivo, não a coleta das leituras.
+
 ---
 
 ## 🗄️ Integração com Banco de Dados SQLite

@@ -1,6 +1,6 @@
 """
 Ponto de entrada do Frontend da Aplicação IMK em Flet.
-Gerencia roteamento e troca dinâmica entre Dashboard e Página do Mapa.
+ Gerencia roteamento e troca dinâmica entre as seções do dashboard.
 """
 import flet as ft
 from theme import BG_MAIN
@@ -8,6 +8,9 @@ from components.sidebar import create_sidebar
 from components.header import create_header
 from pages.dashboard_page import DashboardPage
 from pages.map_page import MapPage
+from pages.sensors_page import SensorsPage
+from pages.reports_page import ReportsPage
+from pages.notifications_page import NotificationsPage
 
 def main(page: ft.Page):
     # Configurações globais da página
@@ -42,6 +45,12 @@ def main(page: ft.Page):
         # Atualiza o conteúdo conforme a rota selecionada
         if current_route == "map":
             content_area.content = MapPage()
+        elif current_route == "sensors":
+            content_area.content = SensorsPage()
+        elif current_route == "reports":
+            content_area.content = ReportsPage()
+        elif current_route == "notifications":
+            content_area.content = NotificationsPage()
         else:
             # Padrão: dashboard
             content_area.content = DashboardPage(on_navigate=navigate_to)
