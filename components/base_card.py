@@ -1,5 +1,5 @@
 """
-Componente Base para todos os Cards do Dashboard IMK.
+Componente Base para todos os Cards do Dashboard STS.
 Centraliza estilos padrão de container, bordas, arredondamento e espaçamento.
 """
 import flet as ft

@@ -7,6 +7,7 @@ from datetime import datetime
 from textwrap import wrap
 
 from telemetry import METRICS, format_value
+from settings_store import load_settings
 
 
 def _literal(value):
@@ -14,9 +15,11 @@ def _literal(value):
     return b"(" + raw.replace(b"\\", b"\\\\").replace(b"(", b"\\(").replace(b")", b"\\)") + b")"
 
 
-def create_report_pdf(devices, notifications, generated_at=None):
+def create_report_pdf(devices, notifications, generated_at=None, *, settings=None):
     """Generate a multi-page PDF from the exact snapshot shown in the preview."""
     generated_at = generated_at or datetime.now()
+    settings = settings if settings is not None else load_settings()
+    farm = settings["property"]
     pages = []
     commands = []
     y = 790
@@ -37,6 +40,10 @@ def create_report_pdf(devices, notifications, generated_at=None):
         commands.append(b"0.83 0.87 0.89 RG 48 %d m 547 %d l S" % (y, y))
         y -= 18
 
+    def wrapped_line(text, size=10, **kwargs):
+        for part in wrap(text, width=72 if size <= 10 else 64):
+            line(part, size, **kwargs)
+
     def new_page():
         nonlocal commands, y, page_number
         if commands:
@@ -45,16 +52,23 @@ def create_report_pdf(devices, notifications, generated_at=None):
         commands = [
             b"0.04 0.10 0.14 rg 0 810 595 32 re f",
             b"0.05 0.72 0.52 rg 48 813 9 9 re f",
-            b"BT 0.92 0.96 0.96 rg /F2 11 Tf 1 0 0 1 65 813 Tm (IMK  |  RELATORIO AGRICOLA) Tj ET",
-            b"BT 0.43 0.49 0.54 rg /F1 8 Tf 1 0 0 1 48 35 Tm " + _literal(f"Fazenda Santa Maria  |  Dados de demonstração  |  Página {page_number}") + b" Tj ET",
+            b"BT 0.92 0.96 0.96 rg /F2 11 Tf 1 0 0 1 65 813 Tm (STS  |  RELATORIO AGRICOLA) Tj ET",
+            b"BT 0.43 0.49 0.54 rg /F1 8 Tf 1 0 0 1 48 35 Tm " + _literal(
+                f'{farm["name"][:38]}  |  Dados de demonstração  |  Página {page_number}') + b" Tj ET",
         ]
         y = 780
 
     new_page()
     line("Relatório de monitoramento", 20, True, step=31)
-    line("Fazenda Santa Maria  |  Safra 2026/2027", 11, step=23)
+    wrapped_line(farm["name"], 11, step=20)
+    if farm["location"]:
+        wrapped_line(farm["location"], 10, step=18)
+    if farm["owner"]:
+        wrapped_line("Responsável pela propriedade: " + farm["owner"], 10, step=18)
+    if settings["reports"]["technical_responsible"]:
+        wrapped_line("Responsável técnico: " + settings["reports"]["technical_responsible"], 10, step=18)
     line("Gerado em " + generated_at.strftime("%d/%m/%Y às %H:%M"), 10, step=24)
-    line("Fonte: dados de demonstração do dashboard IMK. Não representam medições ao vivo.", 9,
+    line("Fonte: dados de demonstração do dashboard STS. Não representam medições ao vivo.", 9,
          color=(0.40, 0.45, 0.50), step=24)
     separator()
     line("Resumo", 14, True, step=24)
@@ -67,6 +81,8 @@ def create_report_pdf(devices, notifications, generated_at=None):
         if y < 195:
             new_page()
         line(f'{device["name"]}  |  {device["device_id"]}', 12, True, step=19)
+        if device.get("nickname"):
+            wrapped_line("Sensor: " + device["nickname"], 10, step=18)
         line(f'{device["crop"]}  |  {device["area"]}  |  {device["status"]}', 9,
              color=(0.40, 0.45, 0.50), step=18)
         for metric_id, title, unit in METRICS:

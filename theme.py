@@ -1,5 +1,5 @@
 """
-Tema e paleta de cores do Dashboard IMK
+Tema e paleta de cores do Dashboard STS
 """
 
 # Cores Principais de Fundo e Estrutura

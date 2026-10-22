@@ -1,5 +1,5 @@
 """
-Pacote de componentes de interface do Dashboard IMK.
+Pacote de componentes de interface do Dashboard STS.
 """
 from components.base_card import BaseCard
 from components.map_card import MapCard, create_map_card

@@ -3,7 +3,8 @@
 The existing dashboard uses mock_data and the SQLite sensor_readings table is
 empty. These values are therefore explicitly sample data, never live readings.
 """
-from mock_data import SPATIAL_DATA, TALHAO_DETAIL, NOTIFICATIONS_DATA
+from mock_data import SPATIAL_DATA, TALHAO_DETAIL
+from settings_store import load_settings
 
 
 METRICS = (
@@ -22,7 +23,7 @@ AIR_HUMIDITY_OFFSETS = (9, 8, 10, 6, 4, 2, 3, 0, -3, -1, 1, -2, 0)
 SOIL_HUMIDITY_OFFSETS = (7, 6, 6, 5, 4, 3, 3, 2, 1, 0, 1, -1, 0)
 
 
-def get_devices():
+def get_devices(settings=None):
     """Return one IoT device per plot, including an offline empty state."""
     readings = {
         "talhao_01": (28, 38, 65),
@@ -30,18 +31,26 @@ def get_devices():
         "talhao_03": (31, 22, 55),
         "talhao_04": (None, None, None),
     }
+    settings = settings if settings is not None else load_settings()
+    plots = {plot["id"]: plot for plot in SPATIAL_DATA["talhoes"]}
     devices = []
-    for plot in SPATIAL_DATA["talhoes"]:
-        air_temp, soil_humidity, air_humidity = readings[plot["id"]]
+    for index, source_plot in enumerate(SPATIAL_DATA["talhoes"], 1):
+        device_id = f"STS-IOT-{index:02d}"
+        config = settings["devices"][device_id]
+        plot = plots[config["plot_id"]]
+        air_temp, soil_humidity, air_humidity = readings[source_plot["id"]]
         online = air_temp is not None
         devices.append({
             "id": plot["id"],
-            "device_id": "IMK-IOT-" + plot["id"].split("_")[-1].zfill(2),
+            "device_id": device_id,
+            "nickname": config["nickname"],
             "name": plot["name"].title(),
             "crop": plot["crop"],
             "area": plot["area"],
-            "status": plot["status"],
+            "status": (plot["status"] if plot["status"] != "Sensor Offline" else "Sem avaliação") if online else "Sensor Offline",
             "online": online,
+            # Fixed demo age, not a timestamp inferred from the machine clock.
+            "minutes_since_seen": 5 if online else 45,
             "values": {
                 "air_temp": air_temp,
                 "soil_humidity": soil_humidity,
@@ -54,43 +63,51 @@ def get_devices():
             },
             "detail": TALHAO_DETAIL[plot["id"]],
         })
-    return devices
+    return sorted(devices, key=lambda device: device["id"])
 
 
-def get_notifications():
-    """Existing dashboard alerts plus contextual guidance from the same plots."""
+def get_notifications(settings=None):
+    """Evaluate saved alert rules against the shared demo snapshot."""
+    settings = settings if settings is not None else load_settings()
+    devices = get_devices(settings)
+    rules = settings["alerts"]
     items = []
-    for alert in NOTIFICATIONS_DATA["items"]:
+
+    def add(device, rule, title, description, severity="Atenção"):
         items.append({
-            "id": str(alert["id"]),
-            "category": "Alerta",
-            "severity": "Crítico" if alert["type"] == "critical" else "Atenção",
-            "title": alert["title"],
-            "location": alert["location"],
-            "description": (
-                "Verifique o solo e planeje o manejo hídrico do talhão."
-                if alert["id"] == 1 else
-                "Verifique o gateway IoT e a comunicação do dispositivo antes de confiar nas leituras."
-            ),
-            "source": alert["source_tag"],
-            "device_id": "talhao_03" if alert["id"] == 1 else "talhao_04",
+            "id": f'{rule}-{device["device_id"]}', "category": "Alerta", "severity": severity,
+            "title": title, "location": device["name"], "description": description,
+            "source": "Regra configurada · demonstração", "device_id": device["id"],
         })
-    items.extend([
-        {
-            "id": "tip-01", "category": "Indicação", "severity": "Informativo",
-            "title": "Acompanhar umidade no Talhão Leste 02",
-            "location": "Talhão Leste 02",
-            "description": "Mantenha a observação da umidade do solo e do alerta fitossanitário registrado no mapa.",
-            "source": "Dados do talhão", "device_id": "talhao_02",
-        },
-        {
-            "id": "tip-02", "category": "Indicação", "severity": "Informativo",
-            "title": "Conferir leituras do Talhão Norte 01",
-            "location": "Talhão Norte 01",
-            "description": "Talhão em condição excelente. Use as leituras como referência para acompanhar a evolução.",
-            "source": "Dados do talhão", "device_id": "talhao_01",
-        },
-    ])
+
+    if rules["enabled"]:
+        for device in devices:
+            if not device["online"]:
+                if rules["offline_enabled"] and device["minutes_since_seen"] >= rules["offline_minutes"]:
+                    add(device, "offline", "Sensor sem comunicação",
+                        f'{device["device_id"]}: sem comunicação há {device["minutes_since_seen"]} min no exemplo. '
+                        f'Limite configurado: {rules["offline_minutes"]} min. Verifique o dispositivo.')
+                continue
+            values = device["values"]
+            if rules["temperature_enabled"] and values["air_temp"] > rules["temperature_max"]:
+                add(device, "temperature", "Temperatura do ar acima do limite",
+                    f'Leitura: {values["air_temp"]:g}°C. Limite: {rules["temperature_max"]:g}°C.', "Crítico")
+            if rules["soil_enabled"] and values["soil_humidity"] < rules["soil_min"]:
+                add(device, "soil", "Umidade do solo abaixo do limite",
+                    f'Leitura: {values["soil_humidity"]:g}%. Limite: {rules["soil_min"]:g}%. '
+                    'Confira o solo e o manejo hídrico do talhão.', "Crítico")
+            if rules["air_enabled"] and values["air_humidity"] < rules["air_min"]:
+                add(device, "air", "Umidade do ar abaixo do limite",
+                    f'Leitura: {values["air_humidity"]:g}%. Limite: {rules["air_min"]:g}%.')
+    for plot_id, title in (("talhao_02", "Acompanhar umidade"), ("talhao_01", "Conferir leituras")):
+        device = next(d for d in devices if d["id"] == plot_id)
+        if device["online"]:
+            items.append({
+                "id": f"tip-{plot_id}", "category": "Indicação", "severity": "Informativo",
+                "title": f'{title} no {device["name"]}', "location": device["name"],
+                "description": "Acompanhe a evolução das leituras e compare com as condições observadas em campo.",
+                "source": "Dados de demonstração do talhão", "device_id": plot_id,
+            })
     return items
 
 

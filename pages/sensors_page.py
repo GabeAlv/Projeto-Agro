@@ -88,7 +88,7 @@ class SensorsPage(ft.Container):
                 ft.Icon(ft.Icons.SENSORS_ROUNDED, color=status_color, size=19),
                 ft.Column([
                     ft.Text(device["name"], color=TEXT_WHITE, size=12, weight=ft.FontWeight.BOLD),
-                    label(device["device_id"] + " · " + ("Online" if device["online"] else "Offline"), status_color, 10),
+                    label((device["nickname"] or device["device_id"]) + " · " + ("Online" if device["online"] else "Offline"), status_color, 10),
                 ], spacing=2, expand=True),
                 ft.Icon(ft.Icons.CHEVRON_RIGHT_ROUNDED, color=TEXT_MUTED, size=18),
             ], spacing=10),
@@ -105,6 +105,7 @@ class SensorsPage(ft.Container):
             ft.Column([
                 label("DISPOSITIVO SELECIONADO"),
                 ft.Text(device["device_id"], color=TEXT_WHITE, size=19, weight=ft.FontWeight.BOLD),
+                label(device["nickname"], COLOR_GOOD) if device["nickname"] else ft.Container(),
                 label(f'{device["name"]} · {device["crop"]} · {device["area"]}'),
             ], spacing=6, col={"sm": 12, "md": 6}),
             ft.Column([

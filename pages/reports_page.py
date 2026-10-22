@@ -6,20 +6,22 @@ from theme import BG_MAIN, TEXT_WHITE, TEXT_MUTED, COLOR_GOOD, COLOR_BLUE, COLOR
 from telemetry import METRICS, get_devices, get_notifications, format_value
 from pages.page_ui import heading, panel, label, device_dropdown
 from report_pdf import create_report_pdf
+from settings_store import load_settings
 
 
 class ReportsPage(ft.Container):
     def __init__(self, **kwargs):
-        self.devices = get_devices()
-        self.notifications = get_notifications()
-        self.selected_id = "all"
+        settings = load_settings()
+        self.devices = get_devices(settings)
+        self.notifications = get_notifications(settings)
+        self.selected_id = settings["reports"]["default_device"]
         self.snapshot = None
         self.picker = ft.FilePicker()
         self.preview = ft.Column(spacing=12)
         self.download_button = ft.Button("Baixar PDF", icon=ft.Icons.PICTURE_AS_PDF_ROUNDED,
                                          bgcolor="#0e5f50", color=TEXT_WHITE,
                                          disabled=True, on_click=self._download)
-        self.dropdown = device_dropdown(self.devices, "all", self._select, include_all=True, width=340)
+        self.dropdown = device_dropdown(self.devices, self.selected_id, self._select, include_all=True, width=340)
         content = ft.Column([
             heading("Relatórios", "Gere um resumo a partir dos dados atuais do dashboard", ft.Icons.DESCRIPTION_OUTLINED),
             panel(ft.Column([
@@ -60,10 +62,11 @@ class ReportsPage(ft.Container):
         self.update()
 
     def _generate(self, e):
-        devices = [d for d in get_devices() if self.selected_id in ("all", d["id"])]
+        settings = load_settings()
+        devices = [d for d in get_devices(settings) if self.selected_id in ("all", d["id"])]
         device_ids = {d["id"] for d in devices}
-        notifications = [n for n in get_notifications() if n["device_id"] in device_ids]
-        self.snapshot = (devices, notifications, datetime.now())
+        notifications = [n for n in get_notifications(settings) if n["device_id"] in device_ids]
+        self.snapshot = (devices, notifications, datetime.now(), settings)
         self.download_button.disabled = False
         self._render_preview()
         self.update()
@@ -71,11 +74,11 @@ class ReportsPage(ft.Container):
     async def _download(self, e):
         if not self.snapshot:
             return
-        devices, notifications, generated_at = self.snapshot
+        devices, notifications, generated_at, settings = self.snapshot
         try:
-            pdf = create_report_pdf(devices, notifications, generated_at)
-            filename = "IMK_relatorio_" + generated_at.strftime("%Y%m%d_%H%M") + ".pdf"
-            await self.picker.save_file(dialog_title="Salvar relatório IMK", file_name=filename,
+            pdf = create_report_pdf(devices, notifications, generated_at, settings=settings)
+            filename = "STS_relatorio_" + generated_at.strftime("%Y%m%d_%H%M") + ".pdf"
+            await self.picker.save_file(dialog_title="Salvar relatório STS", file_name=filename,
                                         file_type=ft.FilePickerFileType.CUSTOM,
                                         allowed_extensions=["pdf"], src_bytes=pdf)
         except Exception as exc:
@@ -91,7 +94,8 @@ class ReportsPage(ft.Container):
                 ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=10),
                 alignment=ft.Alignment.CENTER, height=170)]
             return
-        devices, notices, generated_at = self.snapshot
+        devices, notices, generated_at, settings = self.snapshot
+        farm = settings["property"]
         rows = []
         for device in devices:
             readings = "  ·  ".join(
@@ -104,9 +108,15 @@ class ReportsPage(ft.Container):
                         label(device["device_id"], COLOR_GOOD)],
                        alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
                 label(f'{device["crop"]} · {device["area"]} · {device["status"]}'),
+                *([label(device["nickname"], COLOR_BLUE)] if device["nickname"] else []),
                 ft.Text(readings, color="#cbd5e1", size=12),
             ], spacing=6), padding=12, bgcolor="#101720", border_radius=10))
         self.preview.controls = [
+            ft.Text(farm["name"], color=TEXT_WHITE, size=18, weight=ft.FontWeight.BOLD),
+            *([label(farm["location"])] if farm["location"] else []),
+            *([label("Responsável pela propriedade: " + farm["owner"])] if farm["owner"] else []),
+            *([label("Responsável técnico: " + settings["reports"]["technical_responsible"])]
+              if settings["reports"]["technical_responsible"] else []),
             ft.Row([label(generated_at.strftime("Gerado em %d/%m/%Y às %H:%M"), COLOR_BLUE),
                     label(f"{len(devices)} dispositivo(s) · {len(notices)} notificação(ões)", COLOR_WARNING)],
                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN, wrap=True),

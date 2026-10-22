@@ -1,5 +1,5 @@
 """
-Ponto de entrada do Frontend da Aplicação IMK em Flet.
+Ponto de entrada do Frontend da Aplicação STS em Flet.
  Gerencia roteamento e troca dinâmica entre as seções do dashboard.
 """
 import flet as ft
@@ -11,20 +11,29 @@ from pages.map_page import MapPage
 from pages.sensors_page import SensorsPage
 from pages.reports_page import ReportsPage
 from pages.notifications_page import NotificationsPage
+from pages.settings_page import SettingsPage
+from settings_store import load_settings, ROUTES
 
 def main(page: ft.Page):
     # Configurações globais da página
-    page.title = "IMK - Monitoramento Agrícola & Sensoriamento Espacial"
+    page.title = "STS - Monitoramento Agrícola & Sensoriamento Espacial"
     page.bgcolor = BG_MAIN
     page.theme_mode = ft.ThemeMode.DARK
     page.padding = ft.Padding.all(0)
     page.spacing = 0
 
     # Estado de rota atual
-    current_route = "dashboard"
+    current_route = load_settings()["preferences"]["initial_route"]
 
     # Cabeçalho Superior Fixo
-    header = create_header()
+    header = ft.Container(content=create_header())
+
+    def settings_saved(settings):
+        header.content = create_header(settings)
+        page.title = f'STS - {settings["property"]["name"]}'
+        page.update()
+
+    settings_page = SettingsPage(on_saved=settings_saved)
 
     # Container da Barra Lateral (para permitir re-renderizar estado ativo)
     sidebar_container = ft.Container()
@@ -34,7 +43,7 @@ def main(page: ft.Page):
 
     def navigate_to(route_name: str):
         nonlocal current_route
-        current_route = route_name
+        current_route = route_name if route_name in ROUTES else "dashboard"
 
         # Atualiza a sidebar com a rota ativa correta
         sidebar_container.content = create_sidebar(
@@ -51,18 +60,16 @@ def main(page: ft.Page):
             content_area.content = ReportsPage()
         elif current_route == "notifications":
             content_area.content = NotificationsPage()
+        elif current_route == "settings":
+            content_area.content = settings_page
         else:
             # Padrão: dashboard
             content_area.content = DashboardPage(on_navigate=navigate_to)
 
         page.update()
 
-    # Inicializa Sidebar e Página inicial
-    sidebar_container.content = create_sidebar(
-        active_route=current_route,
-        on_navigate=navigate_to,
-    )
-    content_area.content = DashboardPage(on_navigate=navigate_to)
+    # Usa a mesma navegação na abertura para respeitar a página inicial salva.
+    navigate_to(current_route)
 
     # Layout Principal: Sidebar + Conteúdo
     body = ft.Row(

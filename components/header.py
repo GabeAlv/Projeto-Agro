@@ -11,11 +11,14 @@ from theme import (
     SYNC_TEXT,
 )
 from mock_data import HEADER_DATA
+from settings_store import load_settings
 
 
-def create_header() -> ft.Container:
-    """Retorna o cabeçalho com a logo IMK, status sincronizado e miniatura da fazenda."""
-    # Logotipo IMK com ícone estilizado
+def create_header(settings=None) -> ft.Container:
+    """Retorna o cabeçalho com a logo STS, status sincronizado e miniatura da fazenda."""
+    settings = settings if settings is not None else load_settings()
+    farm = settings["property"]
+    # Logotipo STS com ícone estilizado
     logo_brand = ft.Row(
         controls=[
             ft.Container(
@@ -84,12 +87,18 @@ def create_header() -> ft.Container:
         border=ft.Border.all(1, "#334155"),
         bgcolor="#1e293b",
         alignment=ft.Alignment.CENTER,
-        tooltip=HEADER_DATA["farm_name"],
+        tooltip=farm["name"],
     )
 
     right_section = ft.Row(
         controls=[
             sync_badge,
+            ft.Container(ft.Column([
+                ft.Text(farm["name"], color=TEXT_WHITE, size=12, weight=ft.FontWeight.W_600,
+                        max_lines=1, overflow=ft.TextOverflow.ELLIPSIS, tooltip=farm["name"]),
+                *([ft.Text(farm["location"], color="#94a3b8", size=10, max_lines=1,
+                           overflow=ft.TextOverflow.ELLIPSIS)] if farm["location"] else []),
+            ], spacing=2, horizontal_alignment=ft.CrossAxisAlignment.END), width=180),
             farm_avatar,
         ],
         spacing=16,

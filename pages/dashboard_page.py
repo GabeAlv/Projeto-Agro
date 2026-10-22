@@ -1,5 +1,5 @@
 """
-Página de Dashboard Geral do IMK.
+Página de Dashboard Geral do STS.
 Reúne o mapa espacial resumido, parâmetros climáticos, notificações e gráficos de sensores 24h.
 """
 import flet as ft

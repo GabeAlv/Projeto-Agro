@@ -1,5 +1,5 @@
 """
-Página do Mapa de Talhões do IMK (Enxuta, sem NDVI e com opção de ampliação).
+Página do Mapa de Talhões do STS (Enxuta, sem NDVI e com opção de ampliação).
 Visão espacial expandida, filtros simplificados, inspetor e tabela.
 """
 import flet as ft

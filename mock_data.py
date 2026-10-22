@@ -1,12 +1,12 @@
 """
-Dados mockados (chumbados) da aplicação IMK para visualização no frontend.
+Dados mockados (chumbados) da aplicação STS para visualização no frontend.
 Estruturado para futura integração facilitada com banco de dados SQLite.
 """
 import flet as ft
 
 # Dados do Cabeçalho e Sistema
 HEADER_DATA = {
-    "system_name": "IMK",
+    "system_name": "STS",
     "sync_status": "Sincronizado",
     "farm_name": "Fazenda Santa Maria",
     "version": "v2.4-agro",

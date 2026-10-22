@@ -1,4 +1,4 @@
-# IMK - Dashboard de Monitoramento Agrícola & Sensoriamento Espacial
+# STS - Dashboard de Monitoramento Agrícola & Sensoriamento Espacial
 
 Frontend desenvolvido em **Python** utilizando **Flet** com foco em agricultura de precisão, monitoramento via satélite/drones (NDVI), telemetria climática e previsão com Machine Learning.
 Frontend desenvolvido em **Python** utilizando **Flet** com foco em agricultura de precisão, monitoramento de talhões agrícolas, telemetria climática e previsão com Machine Learning.
@@ -7,9 +7,9 @@ Frontend desenvolvido em **Python** utilizando **Flet** com foco em agricultura 
 
 ## 📸 Layout e Funcionalidades
 
-- **Sidebar de Navegação**: Acesso rápido a Dashboard, Mapa de Talhões, Sensores IoT, Relatórios, Notificações e Configurações com indicador de satélite ativo.
-- **Sidebar de Navegação**: Acesso dinâmico a Dashboard, Mapa de Talhões, Sensores IoT, Relatórios, Notificações e Configurações com indicador de conexão satelital.
-- **Cabeçalho IMK**: Identidade visual moderna com indicador de sincronização em tempo real e thumbnail da propriedade.
+- **Sidebar de Navegação**: Acesso rápido a Dashboard, Mapa de Talhões, Sensores IoT, Relatórios, Notificações e Configurações.
+- **Sidebar de Navegação**: Acesso dinâmico a Dashboard, Mapa de Talhões, Sensores IoT, Relatórios, Notificações e Configurações.
+- **Cabeçalho STS**: Identidade visual moderna com indicador de sincronização em tempo real e thumbnail da propriedade.
 - **Monitoramento Espacial (NDVI)**:
   - Sobreposição interativa dos talhões agrícolas (*Norte 01*, *Leste 02*, *Sul 03*, *Oeste 04*).
 - **Monitoramento Espacial dos Talhões**:
@@ -94,8 +94,19 @@ flet run main.py --web
 - **Sensores IoT:** seleção de um dispositivo por talhão, com temperatura do ar, umidade do solo, umidade do ar, histórico ilustrativo e estado offline.
 - **Relatórios:** escolha de todos os dispositivos ou de um talhão, geração de prévia e download de PDF A4 com as leituras e notificações relacionadas. O PDF é gerado com a biblioteca padrão do Python.
 - **Notificações:** alertas e indicações com filtros por tipo e dispositivo.
+- **Configurações:** dados da propriedade, regras de alerta, apelidos e vínculos dos sensores, dados do relatório e página inicial. A página mantém o rascunho ao navegar, valida os campos e permite salvar, descartar ou revisar os valores padrão antes de restaurar.
 
 As três seções usam dados de demonstração centralizados em `telemetry.py`, pois a tabela `sensor_readings` do SQLite ainda não contém leituras. A data do relatório identifica a geração do arquivo, não a coleta das leituras.
+
+As configurações são salvas em `user_settings.json`, na pasta do projeto, e compartilhadas pelas sessões desta instalação. O arquivo é local e não é versionado. O nome da propriedade aparece no cabeçalho; os dados da propriedade e o responsável técnico aparecem na prévia e no PDF. A seleção padrão do relatório é por talhão ou todos os dispositivos. Alterar a página inicial vale na próxima abertura.
+
+As regras de alerta são aplicadas ao mesmo conjunto de demonstração no Dashboard, em Notificações e nos relatórios: temperatura acima do limite, umidades abaixo dos limites e ausência de comunicação a partir do tempo definido. O sensor STS-IOT-04 simula 45 minutos sem comunicação; os limites iniciais são exemplos, não recomendações agronômicas. Desativar os alertas mantém as indicações informativas. O vínculo entre sensor e talhão é único; ao trocar um sensor de talhão, suas leituras de demonstração acompanham o dispositivo. A prévia e o PDF preservam os dados e configurações do momento da geração.
+
+Para verificar persistência, validação e integrações:
+
+```bash
+python -m unittest discover -s tests -v
+```
 
 ---
 

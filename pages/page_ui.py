@@ -25,7 +25,7 @@ def label(text, color=TEXT_MUTED, size=11):
 
 def device_dropdown(devices, value, on_select, include_all=False, width=280):
     options = [ft.DropdownOption(key="all", text="Todos os dispositivos")] if include_all else []
-    options += [ft.DropdownOption(key=d["id"], text=f'{d["device_id"]} · {d["name"]}') for d in devices]
+    options += [ft.DropdownOption(key=d["id"], text=f'{d.get("nickname") or d["device_id"]} · {d["name"]}') for d in devices]
     return ft.Dropdown(value=value, options=options, width=width, dense=True,
                        label="Dispositivo IoT", border_color=BORDER_COLOR,
                        focused_border_color=COLOR_GOOD, on_select=on_select)

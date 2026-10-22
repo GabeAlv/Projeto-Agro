@@ -8,8 +8,10 @@ from theme import (
     TEXT_MUTED,
     CRITICAL_TAG_BG,
     CRITICAL_TAG_TEXT,
+    COLOR_GOOD,
+    COLOR_WARNING,
 )
-from mock_data import NOTIFICATIONS_DATA
+from telemetry import get_notifications
 from components.base_card import BaseCard
 
 
@@ -70,7 +72,29 @@ def create_notification_item(item: dict) -> ft.Container:
 
 class AlertsCard(BaseCard):
     """Card de Notificações e Alertas herdando de BaseCard."""
-    def __init__(self, data: dict = NOTIFICATIONS_DATA, **kwargs):
+    def __init__(self, data: dict = None, **kwargs):
+        badge_color = CRITICAL_TAG_TEXT
+        badge_background = CRITICAL_TAG_BG
+        if data is None:
+            notices = [n for n in get_notifications() if n["category"] == "Alerta"]
+            notices.sort(key=lambda n: n["severity"] != "Crítico")
+            critical = any(n["severity"] == "Crítico" for n in notices)
+            badge_color = CRITICAL_TAG_TEXT if critical else COLOR_WARNING if notices else COLOR_GOOD
+            badge_background = CRITICAL_TAG_BG if critical else "#332710" if notices else "#10312b"
+            data = {
+                "title": "ALERTAS DOS TALHÕES",
+                "badge_text": f"{len(notices)} ativo(s)" if notices else "Sem alertas",
+                "items": [{
+                    "title": notice["title"], "location": notice["location"],
+                    "source_tag": "Regra · demo",
+                    "icon": ft.Icons.WARNING_AMBER_ROUNDED,
+                    "color": CRITICAL_TAG_TEXT if notice["severity"] == "Crítico" else COLOR_WARNING,
+                    "bg_color": CRITICAL_TAG_BG if notice["severity"] == "Crítico" else "#332710",
+                } for notice in notices[:3]],
+            }
+            remaining = max(0, len(notices) - 3)
+        else:
+            remaining = 0
         # Cabeçalho com badge "Crítico"
         header = ft.Row(
             controls=[
@@ -85,12 +109,12 @@ class AlertsCard(BaseCard):
                         data["badge_text"],
                         size=10.5,
                         weight=ft.FontWeight.BOLD,
-                        color=CRITICAL_TAG_TEXT,
+                        color=badge_color,
                     ),
-                    bgcolor=CRITICAL_TAG_BG,
+                    bgcolor=badge_background,
                     padding=ft.Padding.symmetric(horizontal=8, vertical=3),
                     border_radius=ft.BorderRadius.all(6),
-                    border=ft.Border.all(1, "#5f1d24"),
+                    border=ft.Border.all(1, badge_color),
                 ),
             ],
             alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
@@ -98,6 +122,11 @@ class AlertsCard(BaseCard):
         )
 
         items_list = [create_notification_item(item) for item in data["items"]]
+        if not items_list:
+            items_list = [ft.Text("Nenhum alerta ativo com as regras atuais.", color=TEXT_MUTED, size=12)]
+        if remaining:
+            items_list.append(ft.Text(f"Mais {remaining} alerta(s) na página de Notificações.",
+                                      color=TEXT_MUTED, size=11))
 
         content = ft.Column(
             controls=[
@@ -114,6 +143,6 @@ class AlertsCard(BaseCard):
         )
 
 
-def create_alerts_card(data: dict = NOTIFICATIONS_DATA) -> AlertsCard:
+def create_alerts_card(data: dict = None) -> AlertsCard:
     """Factory helper para instanciar o AlertsCard."""
     return AlertsCard(data=data)

@@ -1,5 +1,5 @@
 """
-Componente de Barra Lateral (Sidebar) com navegação de ícones e status.
+Componente de Barra Lateral (Sidebar) com navegação de ícones.
 Suporta callback de navegação entre páginas.
 """
 import flet as ft
@@ -83,33 +83,12 @@ def create_sidebar(active_route: str = "dashboard", on_navigate=None) -> ft.Cont
         horizontal_alignment=ft.CrossAxisAlignment.CENTER,
     )
 
-    # Botão de satélite / antena no rodapé
-    bottom_action = ft.Container(
-        content=ft.Container(
-            content=ft.Icon(
-                icon=ft.Icons.SATELLITE_ALT_ROUNDED,
-                size=20,
-                color="#cbd5e1",
-            ),
-            width=44,
-            height=44,
-            border_radius=ft.BorderRadius.all(22),
-            bgcolor="#1e293b",
-            border=ft.Border.all(1, "#334155"),
-            alignment=ft.Alignment.CENTER,
-            tooltip="Conexão Satelital Ativa (GNSS RTK)",
-        ),
-        padding=ft.Padding.only(bottom=16),
-        alignment=ft.Alignment.BOTTOM_CENTER,
-    )
-
     return ft.Container(
         content=ft.Column(
             controls=[
                 ft.Container(height=16),
                 nav_icons,
                 ft.Container(expand=True),
-                bottom_action,
             ],
             alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
